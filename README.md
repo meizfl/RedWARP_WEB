@@ -25,7 +25,7 @@ This web version makes the process accessible to everyone — no CLI, no depende
 
 ## Prerequisites for Deployment
 
-- .NET 8 SDK/runtime
+- .NET 8+ SDK/runtime (tested on .NET 10)
 - Linux/Windows/macOS server (tested on Linux)
 - Pre-compiled `wgcf` binary for AMD64 (download from [ViRb3/wgcf releases](https://github.com/ViRb3/wgcf/releases))
   - Place it as `bin/wgcf_amd64` and make executable (`chmod +x bin/wgcf_amd64`)
