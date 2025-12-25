@@ -7,6 +7,7 @@
 
 using System.Diagnostics;
 using System.Text;
+using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
@@ -30,12 +31,41 @@ app.MapPost("/api/generate", async (GenerateRequest req) =>
 
     try
     {
-        // Шлях до wgcf binary (в папці bin поруч з Program.cs)
-        string wgcfPath = Path.Combine(Directory.GetCurrentDirectory(), "bin", "wgcf_amd64");
-        
-        if (!File.Exists(wgcfPath))
-            return Results.Json(new { success = false, message = $"Binary not found: {wgcfPath}. Please place wgcf_amd64 in the bin/ folder." });
+        // Шукаємо будь-який файл, що починається на "wgcf" у папці bin
+        string binDir = Path.Combine(Directory.GetCurrentDirectory(), "bin");
+        string[] wgcfCandidates = Directory.GetFiles(binDir, "wgcf*");
 
+        if (wgcfCandidates.Length == 0)
+            return Results.Json(new { 
+                success = false, 
+                message = "Не знайдено жодного файлу wgcf* у папці bin/. Покладіть туди бінарник (wgcf, wgcf_amd64, wgcf_arm64 тощо)." 
+            });
+
+        if (wgcfCandidates.Length > 1)
+        {
+            // Якщо кілька файлів — сортуємо за іменем і беремо перший
+            Array.Sort(wgcfCandidates);
+        }
+
+        string wgcfPath = wgcfCandidates[0];
+
+        // На Linux/macOS намагаємося зробити файл виконуваним (на всяк випадок)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            try
+            {
+                var chmodPsi = new ProcessStartInfo
+                {
+                    FileName = "chmod",
+                    Arguments = "+x \"" + wgcfPath + "\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var p = Process.Start(chmodPsi);
+                p?.WaitForExit();
+            }
+            catch { /* ігноруємо, якщо не вдалося */ }
+        }
         // Виконуємо wgcf register
         if (!RunCommand(wgcfPath, sessionDir, "register", "--accept-tos"))
             return Results.Json(new { success = false, message = "Command execution error: wgcf register" });
