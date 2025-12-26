@@ -1,4 +1,7 @@
 # RedWARP_WEB
+[![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/dotnet/csharp/)
+[![ASP.NET](https://img.shields.io/badge/ASP.NET-5C2D91?style=for-the-badge&logo=asp.net&logoColor=white)](https://dotnet.microsoft.com/apps/aspnet)
+[![Cloudflare WARP](https://img.shields.io/badge/Cloudflare-WARP-FF6A00?style=for-the-badge&logo=cloudflare)](https://www.cloudflare.com/products/zero-trust/warp-client/)
 
 **RedWARP_WEB** is a web-based generator for Cloudflare WARP WireGuard configurations, optimized for use with **AmneziaWG** clients. This project is a new branch/fork derived from the original [RedWARP_GUI](https://github.com/meizfl/RedWARP_GUI) project, reimagined as a lightweight, server-side web application built with **ASP.NET Core Minimal API** (.NET 10).
 
