@@ -69,7 +69,13 @@ For production: Use `dotnet publish` and deploy behind a reverse proxy (nginx, e
 ## Relation to RedWARP_GUI
 
 This project started as a web adaptation of the original RedWARP_GUI desktop application, shifting the heavy lifting (wgcf execution) to the server for broader accessibility.
-
+## RedWARP over Relay(Alternative Servers)
+**Access point list:**
+| Location     | IP             | WARP | ZeroTrust | Provider   | Access         | Speed |
+|--------------|----------------|------|-----------|------------|-------------|-------|
+| Warsaw, PL   | 51.38.153.32   | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE |
+| Frankfurt, DE| 51.38.107.252  | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE |
+| Roubaix, FR  | 147.135.212.152| 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE |
 ## License
 
 GNU/GPL-3.0 license
