@@ -1,13 +1,14 @@
 // Program.cs - ASP.NET Core Minimal API
 // Target: .NET 8
 // Build: dotnet new web -n RedWarpWeb && cd RedWarpWeb
-//        Створіть папку: mkdir -p bin && chmod +x bin/wgcf_amd64
 //        Replace Program.cs with this content
 //        dotnet run
 
 using System.Diagnostics;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.IO.Compression;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
@@ -15,6 +16,10 @@ var app = builder.Build();
 // Папка для тимчасових файлів кожного користувача
 var workDir = Path.Combine(Directory.GetCurrentDirectory(), "work");
 Directory.CreateDirectory(workDir);
+
+// Папка для бінарників
+var binDir = Path.Combine(Directory.GetCurrentDirectory(), "bin");
+Directory.CreateDirectory(binDir);
 
 app.UseStaticFiles();
 
@@ -31,41 +36,15 @@ app.MapPost("/api/generate", async (GenerateRequest req) =>
 
     try
     {
-        // Шукаємо будь-який файл, що починається на "wgcf" у папці bin
-        string binDir = Path.Combine(Directory.GetCurrentDirectory(), "bin");
-        string[] wgcfCandidates = Directory.GetFiles(binDir, "wgcf*");
-
-        if (wgcfCandidates.Length == 0)
+        // Перевіряємо наявність wgcf або завантажуємо його
+        string? wgcfPath = await EnsureWgcfExists();
+        
+        if (wgcfPath == null)
             return Results.Json(new { 
                 success = false, 
-                message = "Не знайдено жодного файлу wgcf* у папці bin/. Покладіть туди бінарник (wgcf, wgcf_amd64, wgcf_arm64 тощо)." 
+                message = "Не вдалося знайти або завантажити wgcf. Перевірте інтернет-з'єднання." 
             });
 
-        if (wgcfCandidates.Length > 1)
-        {
-            // Якщо кілька файлів — сортуємо за іменем і беремо перший
-            Array.Sort(wgcfCandidates);
-        }
-
-        string wgcfPath = wgcfCandidates[0];
-
-        // На Linux/macOS намагаємося зробити файл виконуваним (на всяк випадок)
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            try
-            {
-                var chmodPsi = new ProcessStartInfo
-                {
-                    FileName = "chmod",
-                    Arguments = "+x \"" + wgcfPath + "\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                using var p = Process.Start(chmodPsi);
-                p?.WaitForExit();
-            }
-            catch { /* ігноруємо, якщо не вдалося */ }
-        }
         // Виконуємо wgcf register
         if (!RunCommand(wgcfPath, sessionDir, "register", "--accept-tos"))
             return Results.Json(new { success = false, message = "Command execution error: wgcf register" });
@@ -109,6 +88,120 @@ app.MapPost("/api/generate", async (GenerateRequest req) =>
 app.Run();
 
 // ===== Допоміжні методи =====
+
+static async Task<string?> EnsureWgcfExists()
+{
+    string binDir = Path.Combine(Directory.GetCurrentDirectory(), "bin");
+    
+    // Шукаємо існуючі файли wgcf
+    string[] wgcfCandidates = Directory.GetFiles(binDir, "wgcf*");
+    
+    if (wgcfCandidates.Length > 0)
+    {
+        Array.Sort(wgcfCandidates);
+        string existingPath = wgcfCandidates[0];
+        MakeExecutable(existingPath);
+        return existingPath;
+    }
+
+    // Якщо не знайдено - завантажуємо
+    Console.WriteLine("wgcf не знайдено, завантажуємо останню версію...");
+    return await DownloadLatestWgcf(binDir);
+}
+
+static async Task<string?> DownloadLatestWgcf(string binDir)
+{
+    try
+    {
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "RedWARP-Generator");
+        
+        // Отримуємо інформацію про останній реліз
+        const string apiUrl = "https://api.github.com/repos/ViRb3/wgcf/releases/latest";
+        var response = await httpClient.GetStringAsync(apiUrl);
+        var releaseInfo = JsonDocument.Parse(response);
+        
+        var assets = releaseInfo.RootElement.GetProperty("assets");
+        
+        // Визначаємо архітектуру системи
+        string arch = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X64 => "amd64",
+            Architecture.Arm64 => "arm64",
+            Architecture.Arm => "armv7",
+            Architecture.X86 => "386",
+            _ => "amd64"
+        };
+        
+        string os = "";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            os = "linux";
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            os = "windows";
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            os = "darwin";
+        else
+            os = "linux"; // fallback
+        
+        // Шукаємо відповідний файл
+        string? downloadUrl = null;
+        string fileName = $"wgcf_{os}_{arch}";
+        if (os == "windows") fileName += ".exe";
+        
+        foreach (var asset in assets.EnumerateArray())
+        {
+            string assetName = asset.GetProperty("name").GetString() ?? "";
+            if (assetName.Contains(os) && assetName.Contains(arch))
+            {
+                downloadUrl = asset.GetProperty("browser_download_url").GetString();
+                break;
+            }
+        }
+        
+        if (downloadUrl == null)
+        {
+            Console.WriteLine($"Не знайдено підходящого файлу для {os}_{arch}");
+            return null;
+        }
+        
+        Console.WriteLine($"Завантажуємо: {downloadUrl}");
+        
+        // Завантажуємо файл
+        var fileBytes = await httpClient.GetByteArrayAsync(downloadUrl);
+        string targetPath = Path.Combine(binDir, fileName);
+        
+        await File.WriteAllBytesAsync(targetPath, fileBytes);
+        MakeExecutable(targetPath);
+        
+        Console.WriteLine($"✓ wgcf успішно завантажено: {targetPath}");
+        return targetPath;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Помилка завантаження wgcf: {ex.Message}");
+        return null;
+    }
+}
+
+static void MakeExecutable(string filePath)
+{
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+    {
+        try
+        {
+            var chmodPsi = new ProcessStartInfo
+            {
+                FileName = "chmod",
+                Arguments = $"+x \"{filePath}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var p = Process.Start(chmodPsi);
+            p?.WaitForExit();
+        }
+        catch { /* ігноруємо, якщо не вдалося */ }
+    }
+}
 
 static async Task ProcessConfigFile(string inputPath, string outputPath, GenerateRequest req)
 {
@@ -552,7 +645,7 @@ static string GetHtmlPage() => """
     </div>
 
     <div class="footer">
-        © 2025 MeizFL • RedWARP UI (ASP.NET Core)
+        © 2025 MeizFL • RedWARP UI (ASP.NET Core) • Auto-download wgcf
     </div>
 
     <script>
