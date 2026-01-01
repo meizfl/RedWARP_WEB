@@ -13,43 +13,43 @@ using System.IO.Compression;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-// Папка для тимчасових файлів кожного користувача
+// Folder for temporary user files
 var workDir = Path.Combine(Directory.GetCurrentDirectory(), "work");
 Directory.CreateDirectory(workDir);
 
-// Папка для бінарників
+// Folder for binaries
 var binDir = Path.Combine(Directory.GetCurrentDirectory(), "bin");
 Directory.CreateDirectory(binDir);
 
 app.UseStaticFiles();
 
-// Головна сторінка
+// Home page
 app.MapGet("/", () => Results.Content(GetHtmlPage(), "text/html"));
 
-// API endpoint для генерації конфігу
+// API endpoint for config generation
 app.MapPost("/api/generate", async (GenerateRequest req) =>
 {
-    // Створюємо унікальну папку для цього запиту
+    // Create a unique folder for this request
     string sessionId = Guid.NewGuid().ToString("N");
     string sessionDir = Path.Combine(workDir, sessionId);
     Directory.CreateDirectory(sessionDir);
 
     try
     {
-        // Перевіряємо наявність wgcf або завантажуємо його
+        // Ensure wgcf exists or download it
         string? wgcfPath = await EnsureWgcfExists();
         
         if (wgcfPath == null)
             return Results.Json(new { 
                 success = false, 
-                message = "Не вдалося знайти або завантажити wgcf. Перевірте інтернет-з'єднання." 
+                message = "Failed to find or download wgcf. Check your internet connection." 
             });
 
-        // Виконуємо wgcf register
+        // Run wgcf register
         if (!RunCommand(wgcfPath, sessionDir, "register", "--accept-tos"))
             return Results.Json(new { success = false, message = "Command execution error: wgcf register" });
 
-        // Виконуємо wgcf generate
+        // Run wgcf generate
         if (!RunCommand(wgcfPath, sessionDir, "generate"))
             return Results.Json(new { success = false, message = "Command execution error: wgcf generate" });
 
@@ -57,29 +57,29 @@ app.MapPost("/api/generate", async (GenerateRequest req) =>
         if (!File.Exists(profilePath))
             return Results.Json(new { success = false, message = "wgcf-profile.conf not found after generate" });
 
-        // Обробляємо конфіг
+        // Process the config
         string outputPath = Path.Combine(sessionDir, "RedWARP.conf");
         await ProcessConfigFile(profilePath, outputPath, req);
 
         if (!File.Exists(outputPath))
             return Results.Json(new { success = false, message = "RedWARP.conf was not created" });
 
-        // Читаємо готовий конфіг
+        // Read the final config
         string configContent = await File.ReadAllTextAsync(outputPath);
         
-        // Видаляємо тимчасові файли
+        // Clean up temporary files
         try { Directory.Delete(sessionDir, true); } catch { }
 
         return Results.Json(new { 
             success = true, 
-            message = "Конфіг успішно згенеровано!",
+            message = "Config successfully generated!",
             config = configContent,
             filename = "RedWARP.conf"
         });
     }
     catch (Exception ex)
     {
-        // Прибираємо тимчасову папку у разі помилки
+        // Clean up temp folder on error
         try { Directory.Delete(sessionDir, true); } catch { }
         return Results.Json(new { success = false, message = "Error: " + ex.Message });
     }
@@ -87,13 +87,13 @@ app.MapPost("/api/generate", async (GenerateRequest req) =>
 
 app.Run();
 
-// ===== Допоміжні методи =====
+// ===== Helper methods =====
 
 static async Task<string?> EnsureWgcfExists()
 {
     string binDir = Path.Combine(Directory.GetCurrentDirectory(), "bin");
     
-    // Шукаємо існуючі файли wgcf
+    // Look for existing wgcf files
     string[] wgcfCandidates = Directory.GetFiles(binDir, "wgcf*");
     
     if (wgcfCandidates.Length > 0)
@@ -104,8 +104,8 @@ static async Task<string?> EnsureWgcfExists()
         return existingPath;
     }
 
-    // Якщо не знайдено - завантажуємо
-    Console.WriteLine("wgcf не знайдено, завантажуємо останню версію...");
+    // If not found - download
+    Console.WriteLine("wgcf not found, downloading latest version...");
     return await DownloadLatestWgcf(binDir);
 }
 
@@ -116,14 +116,14 @@ static async Task<string?> DownloadLatestWgcf(string binDir)
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.Add("User-Agent", "RedWARP-Generator");
         
-        // Отримуємо інформацію про останній реліз
+        // Get latest release info
         const string apiUrl = "https://api.github.com/repos/ViRb3/wgcf/releases/latest";
         var response = await httpClient.GetStringAsync(apiUrl);
         var releaseInfo = JsonDocument.Parse(response);
         
         var assets = releaseInfo.RootElement.GetProperty("assets");
         
-        // Визначаємо архітектуру системи
+        // Detect system architecture
         string arch = RuntimeInformation.ProcessArchitecture switch
         {
             Architecture.X64 => "amd64",
@@ -133,17 +133,11 @@ static async Task<string?> DownloadLatestWgcf(string binDir)
             _ => "amd64"
         };
         
-        string os = "";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            os = "linux";
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            os = "windows";
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            os = "darwin";
-        else
-            os = "linux"; // fallback
+        string os = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
+                    RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" :
+                    RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "darwin" : "linux";
         
-        // Шукаємо відповідний файл
+        // Find matching file
         string? downloadUrl = null;
         string fileName = $"wgcf_{os}_{arch}";
         if (os == "windows") fileName += ".exe";
@@ -160,25 +154,25 @@ static async Task<string?> DownloadLatestWgcf(string binDir)
         
         if (downloadUrl == null)
         {
-            Console.WriteLine($"Не знайдено підходящого файлу для {os}_{arch}");
+            Console.WriteLine($"No suitable file found for {os}_{arch}");
             return null;
         }
         
-        Console.WriteLine($"Завантажуємо: {downloadUrl}");
+        Console.WriteLine($"Downloading: {downloadUrl}");
         
-        // Завантажуємо файл
+        // Download the file
         var fileBytes = await httpClient.GetByteArrayAsync(downloadUrl);
         string targetPath = Path.Combine(binDir, fileName);
         
         await File.WriteAllBytesAsync(targetPath, fileBytes);
         MakeExecutable(targetPath);
         
-        Console.WriteLine($"✓ wgcf успішно завантажено: {targetPath}");
+        Console.WriteLine($"✓ wgcf successfully downloaded: {targetPath}");
         return targetPath;
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Помилка завантаження wgcf: {ex.Message}");
+        Console.WriteLine($"Error downloading wgcf: {ex.Message}");
         return null;
     }
 }
@@ -199,7 +193,7 @@ static void MakeExecutable(string filePath)
             using var p = Process.Start(chmodPsi);
             p?.WaitForExit();
         }
-        catch { /* ігноруємо, якщо не вдалося */ }
+        catch { /* ignore if failed */ }
     }
 }
 
@@ -217,10 +211,21 @@ static async Task ProcessConfigFile(string inputPath, string outputPath, Generat
         if (line.StartsWith("[Interface]")) inInterface = true;
         else if (line.StartsWith("[")) inInterface = false;
 
-        if (!req.Ipv6Enabled)
+        // Handle Address when IPv6 is disabled
+        if (line.StartsWith("Address = ") && !req.Ipv6Enabled)
         {
-            line = RemoveAll(line, ", 2606:4700");
+            int commaIndex = line.IndexOf(',');
+            if (commaIndex > 0)
+            {
+                line = line.Substring(0, commaIndex).TrimEnd();
+            }
+        }
+
+        // Remove ::/0 from AllowedIPs (just in case)
+        if (line.StartsWith("AllowedIPs = ") && !req.Ipv6Enabled)
+        {
             line = RemoveAll(line, ", ::/0");
+            line = RemoveAll(line, ",::/0");
         }
 
         if (inInterface && line.StartsWith("PrivateKey =") && req.AmneziaEnabled)
@@ -315,11 +320,11 @@ static bool RunCommand(string fileName, string workingDir, params string[] args)
 
 static string GetHtmlPage() => """
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The MeizFL's RedWARP Generator</title>
+    <title>MeizFL's RedWARP Generator</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -535,16 +540,16 @@ static string GetHtmlPage() => """
 <body>
     <div class="top-bar">
         <div class="top-bar-content">
-            <div class="title">The MeizFL's RedWARP Generator</div>
+            <div class="title">MeizFL's RedWARP Generator</div>
         </div>
     </div>
 
     <div class="container">
         <div class="main-content">
-            <!-- Ліва картка -->
+            <!-- Left card -->
             <div class="card">
-                <div class="card-header">Параметри підключення</div>
-                <div class="card-description">Endpoint, MTU і AmneziaWG-параметри для RedWARP.</div>
+                <div class="card-header">Connection Settings</div>
+                <div class="card-description">Endpoint, MTU and AmneziaWG parameters for RedWARP.</div>
                 
                 <div class="form-group">
                     <div class="form-row">
@@ -581,10 +586,10 @@ static string GetHtmlPage() => """
                 </div>
             </div>
 
-            <!-- Права картка -->
+            <!-- Right card -->
             <div class="card">
-                <div class="card-header">IPv6, DNS та генерація</div>
-                <div class="card-description">Увімкни IPv6, обери DNS для IPv4/IPv6 — і натисни «Сгенерировать».</div>
+                <div class="card-header">IPv6, DNS & Generation</div>
+                <div class="card-description">Enable IPv6, choose DNS for IPv4/IPv6 — then click "Generate".</div>
                 
                 <div class="form-group">
                     <div class="form-row">
@@ -631,12 +636,12 @@ static string GetHtmlPage() => """
                 <div class="divider"></div>
 
                 <div class="bottom-section">
-                    <div id="status" class="status">Готово до генерації.</div>
-                    <button id="generateBtn" class="btn" onclick="generate()">Сгенерировать</button>
+                    <div id="status" class="status">Ready to generate.</div>
+                    <button id="generateBtn" class="btn" onclick="generate()">Generate</button>
                 </div>
 
                 <div id="downloadSection" class="download-section">
-                    <button id="downloadBtn" class="btn btn-download" onclick="downloadConfig()">📥 Завантажити RedWARP.conf</button>
+                    <button id="downloadBtn" class="btn btn-download" onclick="downloadConfig()">📥 Download RedWARP.conf</button>
                 </div>
 
                 <div id="configOutput" class="config-output"></div>
@@ -694,7 +699,7 @@ static string GetHtmlPage() => """
             const outputEl = document.getElementById('configOutput');
             const downloadSection = document.getElementById('downloadSection');
             
-            statusEl.textContent = '⏳ Запуск wgcf на сервері, зачекай...';
+            statusEl.textContent = '⏳ Running wgcf on server, please wait...';
             statusEl.className = 'status';
             btn.disabled = true;
             outputEl.classList.remove('show');
@@ -730,7 +735,7 @@ static string GetHtmlPage() => """
                     statusEl.className = 'status error';
                 }
             } catch (error) {
-                statusEl.textContent = '❌ Помилка: ' + error.message;
+                statusEl.textContent = '❌ Error: ' + error.message;
                 statusEl.className = 'status error';
             } finally {
                 btn.disabled = false;
