@@ -1,5 +1,5 @@
 // Program.cs - ASP.NET Core Minimal API
-// Target: .NET 8
+// Target: .NET 10
 // Build: dotnet new web -n RedWarpWeb && cd RedWarpWeb
 //        Replace Program.cs with this content
 //        dotnet run
