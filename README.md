@@ -76,6 +76,9 @@ This project started as a web adaptation of the original RedWARP_GUI desktop app
 | Warsaw, PL   | 51.38.153.32   | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
 | Frankfurt, DE| 51.38.107.252  | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
 | Roubaix, FR  | 147.135.212.152| 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
+| Warsaw, PL   | 51.38.153.32   | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
+| Frankfurt, DE| 51.38.107.252  | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
+| Milan, IT  | 89.41.172.64| 5242 | 5241      | Gcore  | Free-to-use | 300 MB | 1340|
 ## License
 
 GNU/GPL-3.0 license
