@@ -73,8 +73,6 @@ This project started as a web adaptation of the original RedWARP_GUI desktop app
 **Access point list:**
 | Location     | IP             | WARP | ZeroTrust | Provider   | Access         | Speed | MTU|
 |--------------|----------------|------|-----------|------------|-------------|-------| ------|
-| Warsaw, PL   | 51.38.153.32   | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
-| Frankfurt, DE| 51.38.107.252  | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
 | Roubaix, FR  | 147.135.212.152| 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
 | Warsaw, PL   | 51.38.153.32   | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
 | Frankfurt, DE| 51.38.107.252  | 5242 | 5241      | OVH Cloud  | Free-to-use | 3 GbE | 1340|
