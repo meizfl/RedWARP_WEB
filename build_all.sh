@@ -16,9 +16,9 @@ base_cmd="dotnet publish -c Release \
   -p:IncludeNativeLibrariesForSelfExtract=true \
   -p:PublishTrimmed=false"
 
-project_name=$(basename *.csproj 2>/dev/null | sed 's/\.csproj$//')
+project_name=$(basename *.fsproj 2>/dev/null | sed 's/\.fsproj$//')
 if [ -z "$project_name" ]; then
-  echo "Error: no .csproj file found in the current directory!"
+  echo "Error: no .fsproj file found in the current directory!"
   exit 1
 fi
 
