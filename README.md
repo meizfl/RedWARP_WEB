@@ -1,5 +1,5 @@
 # RedWARP_WEB
-[![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/dotnet/csharp/)
+[![F#](https://img.shields.io/badge/F%23-378BBA?style=for-the-badge&logo=fsharp&logoColor=white)](https://learn.microsoft.com/dotnet/fsharp/)
 [![ASP.NET](https://img.shields.io/badge/ASP.NET-5C2D91?style=for-the-badge&logo=asp.net&logoColor=white)](https://dotnet.microsoft.com/apps/aspnet)
 [![Cloudflare WARP](https://img.shields.io/badge/Cloudflare-WARP-FF6A00?style=for-the-badge&logo=cloudflare)](https://www.cloudflare.com/products/zero-trust/warp-client/)
 
