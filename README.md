@@ -11,8 +11,8 @@ It allows users to easily generate customized `RedWARP.conf` files directly in t
 
 - **One-click configuration generation** using the `wgcf` tool on the server side.
 - Customizable options:
-  - Endpoint (default: `162.159.192.1:4500`)
-  - MTU (default: 1420)
+  - Endpoint (default: `51.38.153.32:5242`)
+  - MTU (default: 1340)
   - IPv6 support (enable/disable)
   - DNS selection (Cloudflare, Google, Quad9, OpenDNS, or custom for IPv4/IPv6)
   - AmneziaWG mode with optional randomization of jitter parameters (`Jc`, `Jmin`, `Jmax`, `H1-H4`) for better evasion.
