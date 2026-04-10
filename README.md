@@ -15,7 +15,7 @@ It allows users to easily generate customized `RedWARP.conf` files directly in t
   - MTU (default: 1340)
   - IPv6 support (enable/disable)
   - DNS selection (Cloudflare, Google, Quad9, OpenDNS, or custom for IPv4/IPv6)
-  - AmneziaWG mode with optional randomization of jitter parameters (`Jc`, `Jmin`, `Jmax`, `H1-H4`) for better evasion.
+  - AmneziaWG or Wireguard-only mode
 - Clean, responsive web UI with dark theme.
 - Instant config preview and download as `RedWARP.conf`.
 - Temporary session-based processing (files are deleted after generation for privacy).
