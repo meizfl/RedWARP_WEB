@@ -87,3 +87,6 @@ GNU/GPL-3.0 license
 - UI built with plain HTML/CSS/JS for simplicity.
 
 Feel free to open issues or PRs! 🚀
+
+## For donations
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V61YY60F)
