@@ -1,6 +1,5 @@
 // Program.fs - ASP.NET Core Minimal API на F#
-// Target: .NET 8
-// Build: dotnet new web -lang F# -n RedWarpWeb && cd RedWarpWeb
+// Target: .NET 10
 
 open System
 open System.Diagnostics
