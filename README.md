@@ -88,5 +88,9 @@ GNU/GPL-3.0 license
 
 Feel free to open issues or PRs! 🚀
 
+## ⭐ Star this project!
+
+If you like it, hit that star button — it means the world! 🌟
+
 ## For donations
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V61YY60F)
